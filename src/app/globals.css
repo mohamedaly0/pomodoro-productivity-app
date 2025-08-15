@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme CSS Variables - Semantic Design Tokens */
+:root {
+  /* Light theme (default) */
+  --color-bg: 248 250 252; /* slate-50 */
+  --color-surface: 255 255 255; /* white */
+  --color-surface-hover: 248 250 252; /* slate-50 */
+  --color-card: 255 255 255; /* white */
+  --color-border: 226 232 240; /* slate-200 */
+  --color-border-subtle: 241 245 249; /* slate-100 */
+  
+  --color-text-base: 15 23 42; /* slate-900 */
+  --color-text-subtle: 71 85 105; /* slate-600 */
+  --color-text-muted: 148 163 184; /* slate-400 */
+  --color-text-inverse: 255 255 255; /* white */
+  
+  --color-primary: 239 68 68; /* red-500 - focus */
+  --color-primary-hover: 220 38 38; /* red-600 */
+  --color-primary-subtle: 254 242 242; /* red-50 */
+  
+  /* Success color for break states */
+  --success: 34 197 94;
+  --success-foreground: 255 255 255;
+
+  /* Danger color for destructive actions */
+  --danger: 239 68 68;
+  --danger-foreground: 255 255 255;
+
+  /* Ring focus color */
+  --color-ring: var(--color-primary);
+  --color-success-hover: 22 163 74; /* green-600 */
+  --color-success-subtle: 240 253 244; /* green-50 */
+  
+  --color-ring: 239 68 68; /* red-500 - focus rings */
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --color-bg: 2 6 23; /* slate-950 */
+  --color-surface: 15 23 42; /* slate-900 */
+  --color-surface-hover: 30 41 59; /* slate-800 */
+  --color-card: 30 41 59; /* slate-800 */
+  --color-border: 51 65 85; /* slate-700 */
+  --color-border-subtle: 30 41 59; /* slate-800 */
+  
+  --color-text-base: 248 250 252; /* slate-50 */
+  --color-text-subtle: 203 213 225; /* slate-300 */
+  --color-text-muted: 148 163 184; /* slate-400 */
+  --color-text-inverse: 15 23 42; /* slate-900 */
+  
+  --color-primary: 248 113 113; /* red-400 - softer in dark */
+  --color-primary-hover: 239 68 68; /* red-500 */
+  --color-primary-subtle: 69 10 10; /* red-950 */
+  
+  --color-success: 74 222 128; /* green-400 */
+  --color-success-hover: 34 197 94; /* green-500 */
+  --color-success-subtle: 5 46 22; /* green-950 */
+  
+  --color-ring: 248 113 113; /* red-400 */
+}
+
+@layer base {
+  * {
+    border-color: rgb(var(--color-border));
+  }
+  
+  body {
+    background-color: rgb(var(--color-bg));
+    color: rgb(var(--color-text-base));
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Focus styles for accessibility */
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(var(--color-ring));
+  }
+  
+  /* Smooth transitions for theme switching */
+  * {
+    transition-property: color, background-color, border-color, box-shadow;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+}
+
+@layer components {
+  /* Timer display styles */
+  .timer-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.025em;
+  }
+
+  /* Custom animations */
+  @keyframes pulse-gentle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+
+  .animate-pulse-gentle {
+    animation: pulse-gentle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Button variants */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    background-color: rgb(var(--color-primary));
+    color: rgb(var(--color-text-inverse));
+    @apply shadow-sm hover:shadow-md;
+  }
+  
+  .btn-primary:hover {
+    background-color: rgb(var(--color-primary-hover));
+  }
+
+  .btn-secondary {
+    background-color: rgb(var(--color-surface));
+    color: rgb(var(--color-text-base));
+    border: 1px solid rgb(var(--color-border));
+    @apply shadow-sm hover:shadow-md;
+  }
+  
+  .btn-secondary:hover {
+    background-color: rgb(var(--color-surface-hover));
+  }
+
+  .btn-ghost {
+    color: rgb(var(--color-text-subtle));
+  }
+  
+  .btn-ghost:hover {
+    color: rgb(var(--color-text-base));
+    background-color: rgb(var(--color-surface-hover));
+  }
+
+  /* Input styles */
+  .input {
+    background-color: rgb(var(--color-surface));
+    border: 1px solid rgb(var(--color-border));
+    color: rgb(var(--color-text-base));
+    @apply rounded-lg px-3 py-2 text-sm transition-colors;
+  }
+  
+  .input::placeholder {
+    color: rgb(var(--color-text-muted));
+  }
+  
+  .input:focus {
+    border-color: rgb(var(--color-primary));
+    box-shadow: 0 0 0 1px rgb(var(--color-primary));
+  }
+
+  /* Card styles */
+  .card {
+    background-color: rgb(var(--color-card));
+    border: 1px solid rgb(var(--color-border));
+    @apply rounded-xl shadow-md transition-all duration-200;
+  }
+  
+  .card-hover:hover {
+    @apply shadow-lg scale-[1.01];
+  }
+}
