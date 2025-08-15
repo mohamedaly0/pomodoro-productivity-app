@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍅 PomoFocus - Simple Timer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        
+        .timer {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 30px 0;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 15px 30px;
+            margin: 5px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        
+        .mode-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .mode-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .status {
+            margin: 20px 0;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍅 PomoFocus</h1>
+        <p>Simple Pomodoro Timer</p>
+        
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="work">Work (25min)</button>
+            <button class="mode-btn" data-mode="short">Short Break (5min)</button>
+            <button class="mode-btn" data-mode="long">Long Break (15min)</button>
+        </div>
+        
+        <div class="timer" id="timer">25:00</div>
+        
+        <div class="controls">
+            <button id="startBtn">▶️ Start</button>
+            <button id="pauseBtn" disabled>⏸️ Pause</button>
+            <button id="resetBtn">🔄 Reset</button>
+        </div>
+        
+        <div class="status" id="status">Ready to start focusing!</div>
+    </div>
+
+    <script>
+        class SimplePomodoro {
+            constructor() {
+                this.modes = {
+                    work: 25 * 60,
+                    short: 5 * 60,
+                    long: 15 * 60
+                };
+                
+                this.currentMode = 'work';
+                this.timeLeft = this.modes.work;
+                this.isRunning = false;
+                this.timer = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.updateDisplay();
+                this.setupEventListeners();
+                console.log('🍅 PomoFocus initialized successfully!');
+            }
+            
+            setupEventListeners() {
+                // Mode buttons
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        if (!this.isRunning) {
+                            this.setMode(btn.dataset.mode);
+                        }
+                    });
+                });
+                
+                // Control buttons
+                document.getElementById('startBtn').addEventListener('click', () => this.start());
+                document.getElementById('pauseBtn').addEventListener('click', () => this.pause());
+                document.getElementById('resetBtn').addEventListener('click', () => this.reset());
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === ' ') {
+                        e.preventDefault();
+                        this.isRunning ? this.pause() : this.start();
+                    } else if (e.key === 'r' || e.key === 'R') {
+                        e.preventDefault();
+                        this.reset();
+                    }
+                });
+            }
+            
+            setMode(mode) {
+                this.currentMode = mode;
+                this.timeLeft = this.modes[mode];
+                
+                // Update UI
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.mode === mode);
+                });
+                
+                this.updateDisplay();
+                this.updateStatus(`${mode.charAt(0).toUpperCase() + mode.slice(1)} mode selected`);
+            }
+            
+            start() {
+                this.isRunning = true;
+                this.timer = setInterval(() => this.tick(), 1000);
+                
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('pauseBtn').disabled = false;
+                
+                this.updateStatus('Timer running! Stay focused! 🎯');
+            }
+            
+            pause() {
+                this.isRunning = false;
+                clearInterval(this.timer);
+                
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('pauseBtn').disabled = true;
+                
+                this.updateStatus('Timer paused ⏸️');
+            }
+            
+            reset() {
+                this.isRunning = false;
+                clearInterval(this.timer);
+                this.timeLeft = this.modes[this.currentMode];
+                
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('pauseBtn').disabled = true;
+                
+                this.updateDisplay();
+                this.updateStatus('Timer reset! Ready to start again 🔄');
+            }
+            
+            tick() {
+                this.timeLeft--;
+                this.updateDisplay();
+                
+                if (this.timeLeft <= 0) {
+                    this.complete();
+                }
+            }
+            
+            complete() {
+                this.isRunning = false;
+                clearInterval(this.timer);
+                
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('pauseBtn').disabled = true;
+                
+                this.updateStatus('🎉 Session completed! Great work!');
+                
+                // Play a sound or show notification
+                this.playNotificationSound();
+                
+                // Auto-advance to next mode
+                setTimeout(() => {
+                    if (this.currentMode === 'work') {
+                        this.setMode('short');
+                    } else {
+                        this.setMode('work');
+                    }
+                }, 3000);
+            }
+            
+            updateDisplay() {
+                const minutes = Math.floor(this.timeLeft / 60);
+                const seconds = this.timeLeft % 60;
+                const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                document.getElementById('timer').textContent = timeString;
+                document.title = `${timeString} - PomoFocus`;
+            }
+            
+            updateStatus(message) {
+                document.getElementById('status').textContent = message;
+            }
+            
+            playNotificationSound() {
+                // Create a simple beep sound
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gain = context.createGain();
+                
+                oscillator.connect(gain);
+                gain.connect(context.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gain.gain.setValueAtTime(0.3, context.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 0.5);
+            }
+        }
+        
+        // Initialize the app when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🍅 Starting PomoFocus...');
+            const app = new SimplePomodoro();
+            
+            // Make it available globally for debugging
+            window.pomodoroApp = app;
+            
+            console.log('💡 Keyboard shortcuts:');
+            console.log('   Space - Start/Pause');
+            console.log('   R - Reset');
+        });
+    </script>
+</body>
+</html>

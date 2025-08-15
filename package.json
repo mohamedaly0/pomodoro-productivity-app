@@ -1,0 +1,21 @@
+{
+  "name": "pomodoro-productivity-app",
+  "version": "1.0.0",
+  "description": "A Simple Pomodoro Timer App with Professional Design",
+  "main": "server-simple.js",
+  "scripts": {
+    "start": "node server-simple.js",
+    "dev": "nodemon server-simple.js",
+    "test": "echo \"Testing simple Pomodoro app\" && node server-simple.js"
+  },
+  "keywords": ["pomodoro", "productivity", "timer", "focus"],
+  "author": "Mohamed Aly",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

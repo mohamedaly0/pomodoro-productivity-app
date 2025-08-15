@@ -1,0 +1,571 @@
+{
+  "name": "Complete Task Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "complete-task",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-task-completion",
+      "name": "Webhook - Task Completion",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "task_id",
+              "value": "={{ $json.task_id }}"
+            },
+            {
+              "name": "user_id",
+              "value": "={{ $json.user_id }}"
+            },
+            {
+              "name": "completion_notes",
+              "value": "={{ $json.notes || '' }}"
+            },
+            {
+              "name": "pomodoros_used",
+              "value": "={{ $json.pomodoros_used || 0 }}"
+            },
+            {
+              "name": "sync_todoist",
+              "value": "={{ $json.sync_todoist || false }}"
+            },
+            {
+              "name": "celebration_level",
+              "value": "={{ $json.celebration_level || 'standard' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-completion-data",
+      "name": "Set Completion Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "tasks",
+        "updateKey": "id",
+        "columns": "status, completed_at, notes",
+        "additionalFields": {
+          "returnFields": "*"
+        }
+      },
+      "id": "update-task-db",
+      "name": "Update Task in Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-connection",
+          "name": "Supabase Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $node['Set Completion Data'].json.sync_todoist }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-todoist-sync",
+      "name": "Check Todoist Sync",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.todoist.com/rest/v2/tasks/{{ $node['Update Task in Database'].json.todoist_id }}/close",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "httpMethod": "POST",
+        "options": {}
+      },
+      "id": "complete-todoist-task",
+      "name": "Complete Todoist Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "todoist-api",
+          "name": "Todoist API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "users",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $node['Set Completion Data'].json.user_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-user-stats",
+      "name": "Get User Stats",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        900,
+        500
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-connection",
+          "name": "Supabase Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "activity_log",
+        "columns": "user_id, action, entity_type, entity_id, metadata, created_at",
+        "additionalFields": {}
+      },
+      "id": "log-completion",
+      "name": "Log Task Completion",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        500
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-connection",
+          "name": "Supabase Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $node['Set Completion Data'].json.celebration_level }}",
+              "operation": "equal",
+              "value2": "epic"
+            }
+          ]
+        }
+      },
+      "id": "check-celebration-level",
+      "name": "Check Celebration Level",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "{{ $parameter.webhookUrl }}/api/achievements/check",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $parameter.apiKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "={{ $node['Set Completion Data'].json.user_id }}"
+            },
+            {
+              "name": "event_type",
+              "value": "task_completed"
+            },
+            {
+              "name": "task_data",
+              "value": "={{ $node['Update Task in Database'].json }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "check-achievements",
+      "name": "Check for Achievements",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1560,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $parameter.slackWebhookUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "🎉 Epic task completion! {{ $node['Get User Stats'].json.name }} just completed: '{{ $node['Update Task in Database'].json.title }}'"
+            },
+            {
+              "name": "username",
+              "value": "PomoFocus Bot"
+            },
+            {
+              "name": "icon_emoji",
+              "value": ":tomato:"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-slack-celebration",
+      "name": "Send Slack Celebration",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $parameter.webhookUrl }}/api/notifications",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $parameter.apiKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "={{ $node['Set Completion Data'].json.user_id }}"
+            },
+            {
+              "name": "title",
+              "value": "Task Completed! 🎉"
+            },
+            {
+              "name": "message",
+              "value": "Congratulations! You've completed '{{ $node['Update Task in Database'].json.title }}'. {{ $node['Set Completion Data'].json.pomodoros_used ? 'Pomodoros used: ' + $node['Set Completion Data'].json.pomodoros_used : '' }}"
+            },
+            {
+              "name": "type",
+              "value": "success"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-completion-notification",
+      "name": "Send Completion Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1340,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "session_history",
+        "where": {
+          "conditions": [
+            {
+              "column": "user_id",
+              "condition": "equal",
+              "value": "={{ $node['Set Completion Data'].json.user_id }}"
+            },
+            {
+              "column": "date",
+              "condition": "equal",
+              "value": "={{ $now.format('YYYY-MM-DD') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-daily-stats",
+      "name": "Get Daily Stats",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        900,
+        700
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-connection",
+          "name": "Supabase Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "table": "session_history",
+        "updateKey": "user_id,date",
+        "columns": "user_id, date, completed_tasks",
+        "additionalFields": {}
+      },
+      "id": "update-daily-stats",
+      "name": "Update Daily Stats",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        700
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-connection",
+          "name": "Supabase Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": true,\n  \"task\": $node['Update Task in Database'].json,\n  \"message\": \"Task completed successfully! 🎉\",\n  \"stats\": {\n    \"daily_tasks\": ($node['Get Daily Stats'].json.completed_tasks || 0) + 1,\n    \"pomodoros_used\": $node['Set Completion Data'].json.pomodoros_used\n  },\n  \"integrations\": {\n    \"todoist\": $node['Check Todoist Sync'].json.conditions ? \"synced\" : null,\n    \"achievements\": $node['Check Celebration Level'].json.conditions ? $node['Check for Achievements'].json : null\n  }\n} }}"
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Task Completion": {
+      "main": [
+        [
+          {
+            "node": "Set Completion Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Completion Data": {
+      "main": [
+        [
+          {
+            "node": "Update Task in Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Task in Database": {
+      "main": [
+        [
+          {
+            "node": "Check Todoist Sync",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get User Stats",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Daily Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Todoist Sync": {
+      "main": [
+        [
+          {
+            "node": "Complete Todoist Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Celebration Level",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Complete Todoist Task": {
+      "main": [
+        [
+          {
+            "node": "Check Celebration Level",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Stats": {
+      "main": [
+        [
+          {
+            "node": "Log Task Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Task Completion": {
+      "main": [
+        [
+          {
+            "node": "Send Completion Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Celebration Level": {
+      "main": [
+        [
+          {
+            "node": "Check for Achievements",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Slack Celebration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Completion Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Completion Notification": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Daily Stats": {
+      "main": [
+        [
+          {
+            "node": "Update Daily Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "timezone": "America/New_York"
+  },
+  "versionId": "1.0.0",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "complete-task-workflow",
+  "tags": [
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "productivity",
+      "name": "productivity"
+    },
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "completion",
+      "name": "completion"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PomoFocus – Local Pomodoro</title>
+    <link rel="stylesheet" href="css/local.css" />
+</head>
+<body class="mode-work">
+    <h1>🍅 PomoFocus</h1>
+    <p class="subtitle">Focused local Pomodoro (offline mode)</p>
+    <div class="layout">
+        <section class="panel">
+            <div class="modes">
+                <button data-session-type="work" class="active">Work</button>
+                <button data-session-type="short_break">Short Break</button>
+                <button data-session-type="long_break">Long Break</button>
+            </div>
+            <div class="timer-display">
+                <div id="timerDisplay">25:00</div>
+                <div id="timerLabel">Focus Time</div>
+            </div>
+            <div class="progress"><div id="progressFill"></div></div>
+            <div class="controls" style="margin-top:1.2rem">
+                <button id="startTimerBtn">Start</button>
+                <button id="pauseTimerBtn" disabled>Pause</button>
+                <button id="resetTimerBtn" class="secondary">Reset</button>
+                <button id="skipTimerBtn" class="secondary">Skip</button>
+            </div>
+            <div class="stats">
+                <div class="stat"><h4>Pomodoros</h4><div class="val" id="statPomodoros">0</div></div>
+                <div class="stat"><h4>Focus</h4><div class="val" id="statFocus">0m</div></div>
+            </div>
+        </section>
+        <section class="panel tasks">
+            <header>
+                <input id="taskInput" placeholder="Add a task & hit Enter" />
+                <button class="add" id="addTaskBtn">Add</button>
+            </header>
+            <div id="taskList"></div>
+        </section>
+    </div>
+    <div class="notification" id="notification"></div>
+    <footer>Local Offline Mode – Future: Auth, DB, Spotify, Calendar</footer>
+    <script src="js/localAuthStub.js"></script>
+    <script src="js/pomodoroCore.js"></script>
+    <script src="js/localTasks.js"></script>
+    <script>
+        (function(){
+            const notifyEl=document.getElementById('notification');
+            function notify(msg){notifyEl.textContent=msg;notifyEl.classList.add('show');setTimeout(()=>notifyEl.classList.remove('show'),2500);}
+            const timer=new LocalPomodoroTimer();
+            window.localTasks=new LocalTaskManager({timer});
+            timer.onTaskCompleted=()=>{};
+            document.getElementById('startTimerBtn').addEventListener('click',()=>notify('Timer started'));
+            document.getElementById('pauseTimerBtn').addEventListener('click',()=>notify('Timer paused'));
+            document.getElementById('resetTimerBtn').addEventListener('click',()=>notify('Timer reset'));
+            document.getElementById('skipTimerBtn').addEventListener('click',()=>notify('Session skipped'));
+            console.log('[PomoFocus] Local mode ready.');
+        })();
+    </script>
+</body>
+<!-- Clean local-only version ends here. -->
+</body>
+</html>

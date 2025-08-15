@@ -1,0 +1,513 @@
+{
+  "name": "Start Pomodoro Session Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "start-session",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-session-start",
+      "name": "Webhook - Session Start",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "user_id",
+              "value": "={{ $json.user_id }}"
+            },
+            {
+              "name": "task_id",
+              "value": "={{ $json.task_id || null }}"
+            },
+            {
+              "name": "session_type",
+              "value": "={{ $json.session_type || 'work' }}"
+            },
+            {
+              "name": "duration_minutes",
+              "value": "={{ $json.duration_minutes || 25 }}"
+            },
+            {
+              "name": "auto_music",
+              "value": "={{ $json.auto_music || false }}"
+            },
+            {
+              "name": "create_calendar_event",
+              "value": "={{ $json.create_calendar_event || false }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-session-data",
+      "name": "Set Session Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "pomodoro_sessions",
+        "columns": "user_id, task_id, session_type, duration_minutes, status, started_at",
+        "additionalFields": {
+          "returnFields": "*"
+        }
+      },
+      "id": "create-session-db",
+      "name": "Create Session in Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-connection",
+          "name": "Supabase Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $node['Set Session Data'].json.auto_music }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-music-preference",
+      "name": "Check Music Preference",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.spotify.com/v1/me/player/play",
+        "authentication": "oAuth2",
+        "httpMethod": "PUT",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "context_uri",
+              "value": "{{ $parameter.focusPlaylistUri || 'spotify:playlist:37i9dQZF1DX0XUsuxWHRQd' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "start-spotify-music",
+      "name": "Start Spotify Music",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        200
+      ],
+      "credentials": {
+        "spotifyOAuth2": {
+          "id": "spotify-oauth",
+          "name": "Spotify OAuth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $node['Set Session Data'].json.create_calendar_event }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-calendar-preference",
+      "name": "Check Calendar Preference",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        900,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+        "authentication": "oAuth2",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "summary",
+              "value": "🍅 Pomodoro Session - {{ $node['Set Session Data'].json.session_type }}"
+            },
+            {
+              "name": "description",
+              "value": "Pomodoro {{ $node['Set Session Data'].json.session_type }} session ({{ $node['Set Session Data'].json.duration_minutes }} minutes)"
+            },
+            {
+              "name": "start",
+              "value": "{{ { \"dateTime\": $now.toISO(), \"timeZone\": \"UTC\" } }}"
+            },
+            {
+              "name": "end",
+              "value": "{{ { \"dateTime\": $now.plus({ minutes: parseInt($node['Set Session Data'].json.duration_minutes) }).toISO(), \"timeZone\": \"UTC\" } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-calendar-event",
+      "name": "Create Calendar Event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        500
+      ],
+      "credentials": {
+        "googleCalendarOAuth2": {
+          "id": "google-calendar-oauth",
+          "name": "Google Calendar OAuth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "pomodoro_sessions",
+        "updateKey": "id",
+        "columns": "calendar_event_id",
+        "additionalFields": {}
+      },
+      "id": "update-session-calendar",
+      "name": "Update Session with Calendar Event",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        500
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-connection",
+          "name": "Supabase Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $parameter.webhookUrl }}/api/notifications",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $parameter.apiKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "={{ $node['Set Session Data'].json.user_id }}"
+            },
+            {
+              "name": "title",
+              "value": "Pomodoro Started"
+            },
+            {
+              "name": "message",
+              "value": "Your {{ $node['Set Session Data'].json.session_type }} session has started! Focus time: {{ $node['Set Session Data'].json.duration_minutes }} minutes."
+            },
+            {
+              "name": "type",
+              "value": "info"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-notification",
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1340,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": true,\n  \"session\": $node['Create Session in Database'].json,\n  \"message\": \"Pomodoro session started successfully\",\n  \"integrations\": {\n    \"spotify\": $node['Check Music Preference'].json.conditions ? $node['Start Spotify Music'].json : null,\n    \"calendar\": $node['Check Calendar Preference'].json.conditions ? $node['Create Calendar Event'].json : null\n  }\n} }}"
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "activity_log",
+        "columns": "user_id, action, entity_type, entity_id, metadata, created_at",
+        "additionalFields": {}
+      },
+      "id": "log-activity",
+      "name": "Log Activity",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        680,
+        500
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-connection",
+          "name": "Supabase Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $node['Set Session Data'].json.task_id }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "check-task-exists",
+      "name": "Check Task Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        900,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "tasks",
+        "updateKey": "id",
+        "columns": "status",
+        "additionalFields": {}
+      },
+      "id": "update-task-status",
+      "name": "Update Task Status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        100
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-connection",
+          "name": "Supabase Database"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - Session Start": {
+      "main": [
+        [
+          {
+            "node": "Set Session Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Session Data": {
+      "main": [
+        [
+          {
+            "node": "Create Session in Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Session in Database": {
+      "main": [
+        [
+          {
+            "node": "Check Music Preference",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Calendar Preference",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Activity",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Task Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Music Preference": {
+      "main": [
+        [
+          {
+            "node": "Start Spotify Music",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Spotify Music": {
+      "main": [
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Calendar Preference": {
+      "main": [
+        [
+          {
+            "node": "Create Calendar Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Calendar Event": {
+      "main": [
+        [
+          {
+            "node": "Update Session with Calendar Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Notification": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Task Exists": {
+      "main": [
+        [
+          {
+            "node": "Update Task Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "timezone": "America/New_York"
+  },
+  "versionId": "1.0.0",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "start-session-workflow",
+  "tags": [
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "productivity",
+      "name": "productivity"
+    },
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "pomodoro",
+      "name": "pomodoro"
+    }
+  ]
+}
