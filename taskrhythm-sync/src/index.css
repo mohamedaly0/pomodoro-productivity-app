@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Pomodoro Timer Design System - Focus, Flow, Productivity */
+
+@layer base {
+  :root {
+    --background: 249 15% 97%;
+    --foreground: 216 29% 16%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 216 29% 16%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 216 29% 16%;
+
+    /* Pomodoro red theme */
+    --primary: 355 71% 55%;
+    --primary-foreground: 0 0% 98%;
+    --primary-glow: 355 71% 65%;
+
+    /* Break themes */
+    --secondary: 142 71% 45%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-glow: 142 71% 55%;
+
+    --accent-blue: 217 71% 55%;
+    --accent-blue-foreground: 0 0% 98%;
+    --accent-blue-glow: 217 71% 65%;
+
+    --muted: 217 10% 95%;
+    --muted-foreground: 216 12% 45%;
+
+    --accent: 217 10% 95%;
+    --accent-foreground: 216 29% 16%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 217 10% 89%;
+    --input: 217 10% 89%;
+    --ring: 355 71% 55%;
+
+    /* Focus gradients */
+    --gradient-focus: linear-gradient(135deg, hsl(355 71% 55%), hsl(355 71% 65%));
+    --gradient-break: linear-gradient(135deg, hsl(142 71% 45%), hsl(142 71% 55%));
+    --gradient-long-break: linear-gradient(135deg, hsl(217 71% 55%), hsl(217 71% 65%));
+    --gradient-subtle: linear-gradient(180deg, hsl(249 15% 97%), hsl(217 10% 95%));
+
+    /* Shadows */
+    --shadow-focus: 0 10px 30px -10px hsl(355 71% 55% / 0.3);
+    --shadow-break: 0 10px 30px -10px hsl(142 71% 45% / 0.3);
+    --shadow-card: 0 4px 20px -4px hsl(216 29% 16% / 0.1);
+    --shadow-glow: 0 0 40px hsl(355 71% 65% / 0.4);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 216 29% 10%;
+    --foreground: 249 15% 95%;
+
+    --card: 216 29% 12%;
+    --card-foreground: 249 15% 95%;
+
+    --popover: 216 29% 12%;
+    --popover-foreground: 249 15% 95%;
+
+    /* Pomodoro red theme - darker but still vibrant */
+    --primary: 355 71% 60%;
+    --primary-foreground: 0 0% 98%;
+    --primary-glow: 355 71% 70%;
+
+    /* Break themes - adjusted for dark mode */
+    --secondary: 142 71% 50%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-glow: 142 71% 60%;
+
+    --accent-blue: 217 71% 60%;
+    --accent-blue-foreground: 0 0% 98%;
+    --accent-blue-glow: 217 71% 70%;
+
+    --muted: 216 29% 15%;
+    --muted-foreground: 217 10% 65%;
+
+    --accent: 216 29% 15%;
+    --accent-foreground: 249 15% 95%;
+
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 216 29% 18%;
+    --input: 216 29% 18%;
+    --ring: 355 71% 60%;
+
+    /* Dark mode gradients */
+    --gradient-focus: linear-gradient(135deg, hsl(355 71% 55%), hsl(355 71% 65%));
+    --gradient-break: linear-gradient(135deg, hsl(142 71% 45%), hsl(142 71% 55%));
+    --gradient-long-break: linear-gradient(135deg, hsl(217 71% 55%), hsl(217 71% 65%));
+    --gradient-subtle: linear-gradient(180deg, hsl(216 29% 10%), hsl(216 29% 12%));
+
+    /* Dark mode shadows */
+    --shadow-focus: 0 10px 30px -10px hsl(355 71% 55% / 0.4);
+    --shadow-break: 0 10px 30px -10px hsl(142 71% 45% / 0.4);
+    --shadow-card: 0 4px 20px -4px hsl(216 29% 5% / 0.3);
+    --shadow-glow: 0 0 40px hsl(355 71% 65% / 0.5);
+
+    --sidebar-background: 216 29% 8%;
+    --sidebar-foreground: 249 15% 90%;
+    --sidebar-primary: 355 71% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 216 29% 14%;
+    --sidebar-accent-foreground: 249 15% 90%;
+    --sidebar-border: 216 29% 18%;
+    --sidebar-ring: 355 71% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  html {
+    transition: background-color 0.3s ease;
+  }
+}
+
+@layer components {
+  /* Enhanced focus styles for dark mode */
+  .focus-glow {
+    box-shadow: var(--shadow-focus);
+  }
+  
+  .break-glow {
+    box-shadow: var(--shadow-break);
+  }
+  
+  .card-glow {
+    box-shadow: var(--shadow-card);
+  }
+  
+  /* Dark mode specific gradients */
+  .gradient-focus {
+    background: var(--gradient-focus);
+  }
+  
+  .gradient-break {
+    background: var(--gradient-break);
+  }
+  
+  .gradient-long-break {
+    background: var(--gradient-long-break);
+  }
+  
+  .gradient-subtle {
+    background: var(--gradient-subtle);
+  }
+  
+  /* Enhanced transitions for theme switching */
+  .theme-transition {
+    transition: var(--transition-smooth);
+  }
+  
+  /* Dark mode timer display enhancements */
+  .timer-display {
+    text-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+  }
+  
+  .dark .timer-display {
+    text-shadow: 0 0 30px hsl(var(--primary) / 0.5);
+  }
+}
